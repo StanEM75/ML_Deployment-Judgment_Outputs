@@ -1,12 +1,11 @@
 import os
 import sys
 import time
-
 import pandas as pd
+
 from my_model_package.forecasting.utils import pre_processing
 
 if __name__ == '__main__':
-    import os
     print(os.getcwd())
 
     df = pd.read_csv('data/blight_violations.csv')
