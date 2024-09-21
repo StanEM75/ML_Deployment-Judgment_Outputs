@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     # Add a timer to see how long it takes to run the code
     start = time.time()
-    processed_data = processed_data_for_data_science(df,columns_to_drop)
+    processed_data = pre_processing(df)
     end = time.time()
     print(f'Time taken to process data: {round(end - start, 2)} seconds')
 
