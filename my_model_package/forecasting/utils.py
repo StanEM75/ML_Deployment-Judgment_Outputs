@@ -1,5 +1,6 @@
 import pandas as pd
 from datetime import datetime
+from sklearn.preprocessing import LabelEncoder
 
 # Create a function to map the description to a category
 def map_violation_category(description):   
@@ -115,7 +116,7 @@ def pre_processing(df):
 
     date_columns = ['violation_date','hearing_date','hearing_time','judgment_date']
 
-    columns_to_encode = ['state', 'agency_name', 'disposition', 'payment_status','violation_category']
+    #columns_to_encode = ['state', 'agency_name', 'disposition', 'payment_status','violation_category']
 
     df = df[columns_to_keep]
 
@@ -152,8 +153,7 @@ def pre_processing(df):
     # Drop dates columns
     df.drop(columns=date_columns, inplace=True)
 
-    # Encode the categorical variables
-    df = pd.get_dummies(df, columns=columns_to_encode)
+    
     return df 
 
 
