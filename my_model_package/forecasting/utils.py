@@ -110,7 +110,7 @@ def pre_processing(df):
     columns_to_keep= ['agency_name','state','violation_date','hearing_date','hearing_time',
          'judgment_date','violation_description','disposition',
          'fine_amount','admin_fee','state_fee','late_fee','discount_amount',
-          'judgment_amount','balance_due','payment_status']
+          'judgment_amount','balance_due','payment_status','city']
     
     columns_to_drop_only_NaN = ['state', 'discount_amount','fine_amount','late_fee']
 
@@ -129,10 +129,10 @@ def pre_processing(df):
     df = keep_responsibles(df)
 
     # Remove Useless Spaces from Street Names
-    #df['violation_street_name'] = df['violation_street_name'].str.strip()
+    df['violation_street_name'] = df['violation_street_name'].str.strip()
 
     # Capitalize Locations Names
-    #df['violation_street_name'] = df['violation_street_name'].str.capitalize()
+    df['violation_street_name'] = df['violation_street_name'].str.capitalize()
     df['state'] = df['state'].str.capitalize()
 
     # Remove violation_description column
@@ -155,6 +155,8 @@ def pre_processing(df):
 
     
     return df 
+
+
 
 
 
