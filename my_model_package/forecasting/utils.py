@@ -1,5 +1,6 @@
 import pandas as pd
 from datetime import datetime
+from sklearn.preprocessing import LabelEncoder
 
 # Create a function to map the description to a category
 def map_violation_category(description):   
@@ -106,12 +107,18 @@ def is_judgement_later(row):
 # Pre-Processing Function
 def pre_processing(df):
     # Keep only the columns useful for the analysis and prediction
-    to_keep= ['agency_name','violation_street_name'
-          ,'state','violation_date','hearing_date','hearing_time',
+    columns_to_keep= ['agency_name','state','violation_date','hearing_date','hearing_time',
          'judgment_date','violation_description','disposition',
          'fine_amount','admin_fee','state_fee','late_fee','discount_amount',
           'judgment_amount','balance_due','payment_status']
-    df = df[to_keep]
+    
+    columns_to_drop_only_NaN = ['state', 'discount_amount','fine_amount','late_fee']
+
+    date_columns = ['violation_date','hearing_date','hearing_time','judgment_date']
+
+    #columns_to_encode = ['state', 'agency_name', 'disposition', 'payment_status','violation_category']
+
+    df = df[columns_to_keep]
 
     # Apply the mapping to the dataframe
     df['violation_category'] = df['violation_description'].astype(str).apply(lambda x: map_violation_category(x))
@@ -122,10 +129,10 @@ def pre_processing(df):
     df = keep_responsibles(df)
 
     # Remove Useless Spaces from Street Names
-    df['violation_street_name'] = df['violation_street_name'].str.strip()
+    #df['violation_street_name'] = df['violation_street_name'].str.strip()
 
     # Capitalize Locations Names
-    df['violation_street_name'] = df['violation_street_name'].str.capitalize()
+    #df['violation_street_name'] = df['violation_street_name'].str.capitalize()
     df['state'] = df['state'].str.capitalize()
 
     # Remove violation_description column
@@ -140,7 +147,15 @@ def pre_processing(df):
     # Drop NEIGHBORHOOD CITY HALLS  
     df = df[df['agency_name'] != 'NEIGHBORHOOD CITY HALLS']
 
+    # NaN values in the columns state and violation_street_name
+    df.dropna(subset=columns_to_drop_only_NaN, inplace=True)
+
+    # Drop dates columns
+    df.drop(columns=date_columns, inplace=True)
+
+    
     return df 
+
 
 
 
