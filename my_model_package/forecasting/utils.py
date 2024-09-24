@@ -1,5 +1,4 @@
 import pandas as pd
-from datetime import datetime
 from sklearn.preprocessing import LabelEncoder
 
 # Create a function to map the description to a category
@@ -14,7 +13,6 @@ def map_violation_category(description):
     "unlawful storage(RESIDENTIAL)" : "Nuisance linked to Residential Space",
     "placement of Courville Containers" : "Nuisance linked to Residential Space",
     "'Open Storage/ Residential" : "Nuisance linked to Residential Space",
-    "failure to obtain" : "No Certificate",
     "failure to obtain" : "No Certificate",
     "Failed to secure" : "No Certificate",
     "failure of owner to obtain" : "No Certificate",
@@ -59,7 +57,7 @@ def convert_to_other(row):
     else:
         return row['violation_category']
   
-# Keep the responsibles
+# Keep the responsibles only
 def keep_responsibles(df):
     responsible = ['Responsible (Fine Waived) by Admission',
                'Responsible (Fine Waived) by City Dismissal',
@@ -109,15 +107,9 @@ def pre_processing(df):
     # Keep only the columns useful for the analysis and prediction
     columns_to_keep= ['agency_name','state','violation_date','hearing_date','hearing_time',
          'judgment_date','violation_description','disposition',
-         'fine_amount','admin_fee','state_fee','late_fee','discount_amount',
-          'judgment_amount','balance_due','payment_status']
-    
-    columns_to_drop_only_NaN = ['state', 'discount_amount','fine_amount','late_fee']
-
-    date_columns = ['violation_date','hearing_date','hearing_time','judgment_date']
-
-    #columns_to_encode = ['state', 'agency_name', 'disposition', 'payment_status','violation_category']
-
+         'fine_amount','late_fee','discount_amount',
+          'judgment_amount','balance_due','payment_status','city']
+      
     df = df[columns_to_keep]
 
     # Apply the mapping to the dataframe
@@ -134,6 +126,7 @@ def pre_processing(df):
     # Capitalize Locations Names
     #df['violation_street_name'] = df['violation_street_name'].str.capitalize()
     df['state'] = df['state'].str.capitalize()
+    df['city'] = df['city'].map(lambda x: str(x).strip().capitalize())
 
     # Remove violation_description column
     df.drop(columns=['violation_description'], inplace=True)
@@ -147,14 +140,60 @@ def pre_processing(df):
     # Drop NEIGHBORHOOD CITY HALLS  
     df = df[df['agency_name'] != 'NEIGHBORHOOD CITY HALLS']
 
-    # NaN values in the columns state and violation_street_name
+    # Drop rows with judgment_amount = 0. Other amounts are not realistic or difficult to interpret.
+    df = df.query("judgment_amount>0")
+
+    return df
+
+# Feature Engineering 1 : Encode non-Numerical Variables
+def label_encode(df,list_columns):
+    label_encoder = LabelEncoder()
+    for col in list_columns:
+        df[col] = label_encoder.fit_transform(df[col])
+    return df
+
+# Feature Enginnering 2 : Transform the State and City informations into a more general information : Is the violator living in Detroit, Michigan or elsewhere
+def state_violator_origin(row):
+    conditions = {
+        ('MI', 'Detroit'): 'Violator living in Detroit',
+        ('MI',): 'Violator living in Michigan but not in Detroit'
+    }
+    return conditions.get((row['state'], row['city']), 'Violator living outside Michigan')
+
+# Feature Engineering 3 : Transform the Amount of Discount into a Promotion/No Promotion information
+def amount_to_discount(row):
+    if row['discount_amount']==0:
+        return "No Discount"
+    else:
+        return "Discount" 
+
+# Apply the discount status to check if there is a discount or not 
+def feature_engineering(df):
+    columns_to_drop_only_NaN = ['state', 'discount_amount','fine_amount','late_fee']
+
+    columns_to_drop_after_transformation = ['violation_date','hearing_date', 'hearing_time', 'judgment_date','discount_amount','city','state']
+
+    columns_to_encode = ['agency_name', 'disposition', 'payment_status','violation_category','violator_origin','discount_status']
+    
+    df['discount_status'] = df.apply(amount_to_discount, axis=1)
+
+    # Definite the violator's origin
+    df['violator_origin'] = df.apply(state_violator_origin, axis=1)
+
+    # Drop NaN values
     df.dropna(subset=columns_to_drop_only_NaN, inplace=True)
 
     # Drop dates columns
-    df.drop(columns=date_columns, inplace=True)
+    df.drop(columns=columns_to_drop_after_transformation, inplace=True)
 
-    
-    return df 
+    #Encode the categorical columns
+    df = label_encode(df,columns_to_encode)
+
+    # Reset the index
+    df.reset_index(inplace=True,drop=True)
+
+
+
 
 
 
